@@ -1,7 +1,13 @@
 package kitchenpos.application;
 
-import kitchenpos.dao.ProductDao;
-import kitchenpos.domain.Product;
+import kitchenpos.product.application.ProductService;
+import kitchenpos.product.dao.ProductDao;
+import kitchenpos.product.domain.Name;
+import kitchenpos.product.domain.Price;
+import kitchenpos.product.domain.Product;
+import kitchenpos.product.domain.ProductRepository;
+import kitchenpos.product.dto.ProductRequest;
+import kitchenpos.product.dto.ProductResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +33,9 @@ public class ProductServiceTest {
     @Mock
     private ProductDao productDao;
 
+    @Mock
+    private ProductRepository productRepository;
+
     @InjectMocks
     private ProductService productService;
 
@@ -41,9 +50,9 @@ public class ProductServiceTest {
     @DisplayName("상품을 등록한다.")
     @Test
     void createProduct() {
-        given(productDao.save(상품1)).willReturn(상품1);
+        given(productRepository.save(상품1)).willReturn(상품1);
 
-        Product createdProduct = 상품_생성_요청();
+        ProductResponse createdProduct = 상품_생성_요청();
 
         상품_생성_요청됨(createdProduct);
     }
@@ -59,23 +68,22 @@ public class ProductServiceTest {
     @DisplayName("상품 목록을 조회한다.")
     @Test
     void searchProductList() {
-        given(productDao.findAll()).willReturn(Arrays.asList(상품1, 상품2));
+        given(productRepository.findAll()).willReturn(Arrays.asList(상품1, 상품2));
 
-        상품_목록_조회_요청();
-        List<Product> products = 상품_목록_조회_요청();
+        List<ProductResponse> products = 상품_목록_조회_요청();
 
         상품_목록_조회됨(products);
     }
 
     public static Product 상품_생성(Long id, String name, BigDecimal price) {
-        return new Product(id, name, price);
+        return new Product(id, new Name(name), new Price(price));
     }
 
-    private Product 상품_생성_요청() {
-        return productService.create(this.상품1);
+    private ProductResponse 상품_생성_요청() {
+        return productService.create(new ProductRequest(상품1.getName(), 상품1.getPrice()));
     }
 
-    private void 상품_생성_요청됨(Product createdProduct) {
+    private void 상품_생성_요청됨(ProductResponse createdProduct) {
         assertThat(createdProduct.getId()).isEqualTo(this.상품1.getId());
         assertThat(createdProduct.getName()).isEqualTo(this.상품1.getName());
         assertThat(createdProduct.getPrice()).isEqualTo(this.상품1.getPrice());
@@ -83,7 +91,7 @@ public class ProductServiceTest {
 
     private void 상품_가격_0원_이하일_경우_예외_발생힘() {
         assertThatThrownBy(
-                () -> productService.create(this.상품1))
+                () -> productService.create(new ProductRequest(상품1.getName(), 상품1.getPrice())))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -91,13 +99,12 @@ public class ProductServiceTest {
         상품1.updatePrice(new BigDecimal(-10));
     }
 
-    private void 상품_목록_조회됨(List<Product> products) {
-        assertThat(products).containsExactly(상품1, 상품2);
+    private void 상품_목록_조회됨(List<ProductResponse> products) {
         assertThat(products.get(0).getName()).isEqualTo(상품1.getName());
         assertThat(products.get(1).getName()).isEqualTo(상품2.getName());
     }
 
-    private List<Product> 상품_목록_조회_요청() {
+    private List<ProductResponse> 상품_목록_조회_요청() {
         return productService.list();
     }
 }

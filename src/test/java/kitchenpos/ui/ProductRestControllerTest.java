@@ -2,8 +2,10 @@ package kitchenpos.ui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kitchenpos.application.ProductService;
-import kitchenpos.domain.Product;
+import kitchenpos.product.application.ProductService;
+import kitchenpos.product.domain.Product;
+import kitchenpos.product.dto.ProductResponse;
+import kitchenpos.product.ui.ProductRestController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,7 +60,7 @@ class ProductRestControllerTest {
     @DisplayName("상품을 등록한다.")
     @Test
     void createProduct() throws Exception {
-        given(productService.create(any())).willReturn(상품1);
+        given(productService.create(any())).willReturn(new ProductResponse(상품1));
 
         final ResultActions actions =상품_등록_요청();
 
@@ -68,7 +70,7 @@ class ProductRestControllerTest {
     @DisplayName("상품 목록을 조회한다.")
     @Test
     void searchProductList() throws Exception {
-        given(productService.list()).willReturn(Arrays.asList(상품1, 상품2));
+        given(productService.list()).willReturn(Arrays.asList(new ProductResponse(상품1), new ProductResponse(상품2)));
 
         final ResultActions actions = 상품_목록_조회_요청();
 

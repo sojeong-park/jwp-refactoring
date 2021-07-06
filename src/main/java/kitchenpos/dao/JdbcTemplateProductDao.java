@@ -1,6 +1,9 @@
 package kitchenpos.dao;
 
-import kitchenpos.domain.Product;
+import kitchenpos.product.dao.ProductDao;
+import kitchenpos.product.domain.Name;
+import kitchenpos.product.domain.Price;
+import kitchenpos.product.domain.Product;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -65,7 +68,7 @@ public class JdbcTemplateProductDao implements ProductDao {
         Long id = resultSet.getLong(KEY_COLUMN_NAME);
         String name = resultSet.getString("name");
         BigDecimal price = resultSet.getBigDecimal("price");
-        final Product entity = new Product(id, name, price);
+        final Product entity = new Product(id, new Name(name), new Price(price));
         return entity;
     }
 }
