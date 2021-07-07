@@ -1,14 +1,29 @@
-package kitchenpos.domain;
+package kitchenpos.menu.domain;
 
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.function.BiConsumer;
 
+@Entity
 public class Menu {
     private Long id;
     private String name;
     private BigDecimal price;
+    /**
+     * https://jdm.kr/blog/142 
+     * 메뉴 객체는 한개의 메뉴 그룹에 속할 수 있다 : @ManyToOne
+     * 메뉴 그룹 객체는 여러개의 메뉴를 가질 수 있다 : @OneToMany
+     */
+    @ManyToOne
     private Long menuGroupId;
+
+    /**
+     * 메뉴 객체는 여러개의 메뉴 상품을 가질 수 있다 : @OneToMany
+     * 메뉴상품 객체는 한개의 메뉴에 속한다 : @ManyToOne
+     */
+    @OneToMany
     private List<MenuProduct> menuProducts;
 
     public Menu() {}
