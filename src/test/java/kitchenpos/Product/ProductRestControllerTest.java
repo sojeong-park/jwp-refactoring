@@ -1,4 +1,4 @@
-package kitchenpos.ui;
+package kitchenpos.Product;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static kitchenpos.application.ProductServiceTest.상품_생성;
+import static kitchenpos.Product.ProductServiceTest.상품_생성;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;

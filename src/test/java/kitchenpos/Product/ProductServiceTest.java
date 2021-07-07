@@ -1,4 +1,4 @@
-package kitchenpos.application;
+package kitchenpos.Product;
 
 import kitchenpos.product.application.ProductService;
 import kitchenpos.product.dao.ProductDao;
@@ -22,7 +22,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willReturn;
 
 @DisplayName("상품 관련 기능 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +52,7 @@ public class ProductServiceTest {
     @DisplayName("상품을 등록한다.")
     @Test
     void createProduct() {
-        given(productRepository.save(상품1)).willReturn(상품1);
+        given(productRepository.save(any())).willReturn(상품1);
 
         ProductResponse createdProduct = 상품_생성_요청();
 

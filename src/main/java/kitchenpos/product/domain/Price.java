@@ -11,6 +11,7 @@ public class Price {
         if (Objects.isNull(price) || price.compareTo(BigDecimal.ZERO) < ZERO) {
             throw new IllegalArgumentException();
         }
+        this.price = price;
     }
 
     public BigDecimal getPrice() {

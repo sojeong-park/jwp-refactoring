@@ -23,7 +23,6 @@ public class Product {
     }
 
     public Product(Name name, Price price) {
-        this.id = id;
         this.name = name;
         this.price = price;
     }
