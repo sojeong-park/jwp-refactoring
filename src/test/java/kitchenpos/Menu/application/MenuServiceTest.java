@@ -1,13 +1,17 @@
-package kitchenpos.application;
+package kitchenpos.Menu.application;
 
 import kitchenpos.dao.MenuDao;
 import kitchenpos.dao.MenuGroupDao;
 import kitchenpos.dao.MenuProductDao;
+import kitchenpos.menu.application.MenuService;
+import kitchenpos.menu.domain.*;
+import kitchenpos.menu.dto.MenuGroupRequest;
+import kitchenpos.menu.dto.MenuResponse;
 import kitchenpos.product.dao.ProductDao;
-import kitchenpos.menu.domain.Menu;
-import kitchenpos.menu.domain.MenuGroup;
-import kitchenpos.menu.domain.MenuProduct;
+import kitchenpos.product.domain.Name;
+import kitchenpos.product.domain.Price;
 import kitchenpos.product.domain.Product;
+import kitchenpos.product.domain.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,9 +23,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static kitchenpos.Product.ProductServiceTest.상품_생성;
+import static kitchenpos.Product.application.ProductServiceTest.상품_생성;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @DisplayName("메뉴 관련 기능 테스트")
@@ -33,16 +38,16 @@ public class MenuServiceTest {
     private List<MenuProduct> menuProducts = new ArrayList<>();
 
     @Mock
-    private MenuDao menuDao;
+    private MenuRepository menuRepository;
 
     @Mock
-    private MenuGroupDao menuGroupDao;
+    private MenuGroupRepository menuGroupRepository;
+
+//    @Mock
+//    private MenuProduct menuProductDao;
 
     @Mock
-    private MenuProductDao menuProductDao;
-
-    @Mock
-    private ProductDao productDao;
+    private ProductRepository productRepository;
 
     @InjectMocks
     private MenuService menuService;
@@ -86,10 +91,10 @@ public class MenuServiceTest {
         Menu menu = 메뉴_상품이_존재하는_메뉴_생성();
 
 //        메뉴_생성에_필요한_값_설정(menu);
-        given(productDao.findById(menuProduct.getProductId())).willReturn(Optional.of(product));
-        given(menuProductDao.save(menuProduct)).willReturn(menuProduct);
-        given(menuGroupDao.existsById(menu.getMenuGroupId())).willReturn(true);
-        given(menuDao.save(menu)).willReturn(menu);
+        given(productRepository.findById(menuProduct.getProductId())).willReturn(Optional.of(product));
+        //given(menuProductDao.save(any())).willReturn(menuProduct);
+        given(menuGroupRepository.existsById(menu.getMenuGroup().getId())).willReturn(true);
+        given(menuRepository.save(any())).willReturn(menu);
         Menu createdMenu = 메뉴_생성_요청(menu);
 
         메뉴_생성됨(createdMenu, menu);
@@ -119,8 +124,8 @@ public class MenuServiceTest {
         menuProducts.add(menuProduct);
     }
 
-    public static Menu 메뉴_생성(Long id, String name, BigDecimal price, Long menuGroupId) {
-        return new Menu(id, name, price, menuGroupId);
+    public static Menu 메뉴_생성(Long id, String name, BigDecimal price, MenuGroup menuGroupId) {
+        return new Menu(id, new Name(name), new Price(price), menuGroupId);
     }
 
     private Menu 가격_0원_이하인_메뉴_생성() {
@@ -147,14 +152,14 @@ public class MenuServiceTest {
     }
 
     private void 메뉴_그룹_존재함() {
-        given(menuGroupDao.existsById(menuGroup.getId())).willReturn(true);
+        given(menuGroupRepository.existsById(menuGroup.getId())).willReturn(true);
     }
 
     private Menu 메뉴에_속한_상품보다_비싼_메뉴_가격_생성() {
-        Menu menu = new Menu(3L, "레드허콤보", new BigDecimal("200000"), menuGroup.getId());
+        Menu menu = new Menu(3L, new Name("레드허콤보"), new Price(new BigDecimal("200000")), menuGroup);
         menuProduct = 메뉴_상품_생성(1L, menu.getId(), product.getId(), 10L);
         menuProducts.add(menuProduct);
-        menu.updateMenuProducts(menuProducts);
+        menu.addMenuProducts(menuProducts);
         return menu;
     }
 
@@ -162,7 +167,7 @@ public class MenuServiceTest {
         assertThat(createdMenu.getId()).isEqualTo(menu.getId());
         assertThat(createdMenu.getName()).isEqualTo(menu.getName());
         assertThat(createdMenu.getPrice()).isEqualTo(menu.getPrice());
-        assertThat(createdMenu.getMenuGroupId()).isEqualTo(menu.getMenuGroupId());
+        assertThat(createdMenu.getMenuGroup().getId()).isEqualTo(menu.getMenuGroup().getId());
         assertThat(createdMenu.getMenuProducts()).isEqualTo(menu.getMenuProducts());
     }
 
@@ -171,21 +176,21 @@ public class MenuServiceTest {
     }
 
     private void 메뉴_생성에_필요한_값_설정(Menu menu) {
-        given(productDao.findById(menuProduct.getProductId())).willReturn(Optional.of(product));
-        given(menuProductDao.save(menuProduct)).willReturn(menuProduct);
-        given(menuGroupDao.existsById(menu.getMenuGroupId())).willReturn(true);
-        given(menuDao.save(menu)).willReturn(menu);
+        given(productRepository.findById(menuProduct.getProductId())).willReturn(Optional.of(product));
+//        given(menuProduct.save(menuProduct)).willReturn(menuProduct);
+        given(menuGroupRepository.existsById(menu.getMenuGroup().getId())).willReturn(true);
+        given(menuRepository.save(any())).willReturn(menu);
     }
 
     private void 메뉴_목록_조회에_필요한_값_설정(Menu menu) {
-        given(menuDao.findAll()).willReturn(Arrays.asList(menu));
+        given(menuRepository.findAll()).willReturn(Arrays.asList(menu));
     }
 
     private void 메뉴_목록_조회됨(List<Menu> menus, Menu menu) {
         assertThat(menus).containsExactly(menu);
         assertThat(menus.get(0).getId()).isEqualTo(menu.getId());
         assertThat(menus.get(0).getMenuProducts()).isEqualTo(menu.getMenuProducts());
-        assertThat(menus.get(0).getMenuGroupId()).isEqualTo(menu.getMenuGroupId());
+        assertThat(menus.get(0).getMenuGroup().getId()).isEqualTo(menu.getMenuGroup().getId());
         assertThat(menus.get(0).getName()).isEqualTo(menu.getName());
         assertThat(menus.get(0).getPrice()).isEqualTo(menu.getPrice());
     }
@@ -198,7 +203,7 @@ public class MenuServiceTest {
         Menu menu = 메뉴_생성(1L, "간장소스치킨", new BigDecimal(15000), menuGroup.getId());
         menuProduct = 메뉴_상품_생성(1L, menu.getId(), product.getId(), 1L);
         메뉴_상품_목록_추가(menuProduct);
-        menu.updateMenuProducts(menuProducts);
+        //menu.updateMenuProducts(menuProducts);
         return menu;
     }
 }

@@ -1,9 +1,11 @@
-package kitchenpos.ui;
+package kitchenpos.Menu.ui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kitchenpos.application.MenuGroupService;
+import kitchenpos.menu.application.MenuGroupService;
 import kitchenpos.menu.domain.MenuGroup;
+import kitchenpos.menu.dto.MenuGroupResponse;
+import kitchenpos.ui.MenuGroupRestController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +21,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static kitchenpos.application.MenuGroupServiceTest.메뉴_그룹_생성;
+import static kitchenpos.Menu.application.MenuGroupServiceTest.메뉴_그룹_생성;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -35,6 +37,9 @@ class MenuGroupRestControllerTest {
     private MockMvc mockMvc;
     private MenuGroup menuGroup1;
     private MenuGroup menuGroup2;
+
+    private MenuGroupResponse menuGroupResponse1;
+    private MenuGroupResponse menuGroupResponse2;
 
     @MockBean
     private MenuGroupService menuGroupService;
@@ -52,12 +57,15 @@ class MenuGroupRestControllerTest {
         menuGroup1 = 메뉴_그룹_생성(1L, "반반시리즈");
 
         menuGroup2 = 메뉴_그룹_생성(2L, "허니시리즈");
+
+        menuGroupResponse1 = new MenuGroupResponse(menuGroup1);
+        menuGroupResponse2 = new MenuGroupResponse(menuGroup2);
     }
 
     @DisplayName("메뉴 그룹 등록한다.")
     @Test
     void create() throws Exception {
-        given(menuGroupService.create(any())).willReturn(menuGroup1);
+        given(menuGroupService.create(any())).willReturn(menuGroupResponse1);
 
         final ResultActions actions = 메뉴_그룹_등록_요청();
 
@@ -67,7 +75,7 @@ class MenuGroupRestControllerTest {
     @DisplayName("메뉴 그룹 목록을 조회한다.")
     @Test
     void list() throws Exception {
-        given(menuGroupService.list()).willReturn(Arrays.asList(menuGroup1, menuGroup2));
+        given(menuGroupService.list()).willReturn(Arrays.asList(menuGroupResponse1, menuGroupResponse2));
 
         final ResultActions actions =  메뉴_그룹_목록_조회();
 

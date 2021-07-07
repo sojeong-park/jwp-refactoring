@@ -1,9 +1,11 @@
-package kitchenpos.ui;
+package kitchenpos.Menu.ui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kitchenpos.application.MenuService;
+import kitchenpos.menu.application.MenuService;
 import kitchenpos.menu.domain.Menu;
+import kitchenpos.menu.domain.MenuGroup;
+import kitchenpos.ui.MenuRestController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static kitchenpos.application.MenuServiceTest.메뉴_생성;
+import static kitchenpos.Menu.application.MenuServiceTest.메뉴_생성;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -51,10 +53,10 @@ public class MenuRestControllerTest {
     @BeforeEach
     void setUp() {
         setUpMockMvc(menuRestController);
+        MenuGroup menuGroup = new MenuGroup(1L, "치킨들");
+        menu1 = 메뉴_생성(1L, "간장레드반반치킨", new BigDecimal(18000), menuGroup);
 
-        menu1 = 메뉴_생성(1L, "간장레드반반치킨", new BigDecimal(18000), 1L);
-
-        menu2 = 메뉴_생성(2L, "허니치킨", new BigDecimal(18000), 1L);
+        menu2 = 메뉴_생성(2L, "허니치킨", new BigDecimal(18000), menuGroup);
     }
 
     @Test

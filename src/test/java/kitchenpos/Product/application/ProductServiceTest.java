@@ -1,4 +1,4 @@
-package kitchenpos.Product;
+package kitchenpos.Product.application;
 
 import kitchenpos.product.application.ProductService;
 import kitchenpos.product.dao.ProductDao;
@@ -31,9 +31,6 @@ import static org.mockito.BDDMockito.willReturn;
 public class ProductServiceTest {
     public Product 상품1;
     public Product 상품2;
-
-    @Mock
-    private ProductDao productDao;
 
     @Mock
     private ProductRepository productRepository;
