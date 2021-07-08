@@ -1,8 +1,8 @@
 package kitchenpos.dao;
 
 import kitchenpos.product.dao.ProductDao;
-import kitchenpos.product.domain.Name;
-import kitchenpos.product.domain.Price;
+import kitchenpos.common.Name;
+import kitchenpos.common.Price;
 import kitchenpos.product.domain.Product;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;

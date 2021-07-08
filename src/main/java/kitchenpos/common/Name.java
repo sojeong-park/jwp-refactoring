@@ -1,4 +1,4 @@
-package kitchenpos.product.domain;
+package kitchenpos.common;
 
 public class Name {
     private String name;

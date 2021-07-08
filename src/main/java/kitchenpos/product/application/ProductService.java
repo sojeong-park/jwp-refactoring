@@ -1,8 +1,7 @@
 package kitchenpos.product.application;
 
-import kitchenpos.product.dao.ProductDao;
-import kitchenpos.product.domain.Name;
-import kitchenpos.product.domain.Price;
+import kitchenpos.common.Name;
+import kitchenpos.common.Price;
 import kitchenpos.product.domain.Product;
 import kitchenpos.product.domain.ProductRepository;
 import kitchenpos.product.dto.ProductRequest;

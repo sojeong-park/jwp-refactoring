@@ -1,8 +1,17 @@
-package kitchenpos.domain;
+package kitchenpos.order.domain;
 
+import javax.persistence.*;
+
+@Entity
 public class OrderTable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long tableGroupId;
+
+    @ManyToOne
+    @JoinColumn(name = "table_group_id")
+    private TableGroup tableGroup;
+
     private int numberOfGuests;
     private boolean empty;
 
@@ -14,9 +23,9 @@ public class OrderTable {
         this.empty = empty;
     }
 
-    public OrderTable(Long id, Long tableGroupId, int numberOfGuests, boolean empty) {
+    public OrderTable(Long id, TableGroup tableGroup, int numberOfGuests, boolean empty) {
         this.id = id;
-        this.tableGroupId = tableGroupId;
+        this.tableGroup = tableGroup;
         this.numberOfGuests = numberOfGuests;
         this.empty = empty;
     }
@@ -25,17 +34,13 @@ public class OrderTable {
         return id;
     }
 
-    public void setId(final Long id) {
-        this.id = id;
+    public TableGroup getTableGroup() {
+        return tableGroup;
     }
 
-    public Long getTableGroupId() {
-        return tableGroupId;
-    }
-
-    public void updateTableGroupId(final Long tableGroupId) {
-        this.tableGroupId = tableGroupId;
-    }
+//    public void updateTableGroupId(final Long tableGroupId) {
+//        this.tableGroupId = tableGroupId;
+//    }
 
     public int getNumberOfGuests() {
         return numberOfGuests;
@@ -45,7 +50,7 @@ public class OrderTable {
         this.numberOfGuests = numberOfGuests;
     }
 
-    public boolean isEmpty() {
+    public boolean getEmpty() {
         return empty;
     }
 

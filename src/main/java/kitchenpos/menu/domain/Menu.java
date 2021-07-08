@@ -1,8 +1,7 @@
 package kitchenpos.menu.domain;
 
-import kitchenpos.menu.dto.MenuProductRequest;
-import kitchenpos.product.domain.Name;
-import kitchenpos.product.domain.Price;
+import kitchenpos.common.Name;
+import kitchenpos.common.Price;
 
 import javax.persistence.*;
 import java.math.BigDecimal;

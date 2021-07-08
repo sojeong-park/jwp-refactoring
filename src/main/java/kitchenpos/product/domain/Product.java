@@ -1,5 +1,8 @@
 package kitchenpos.product.domain;
 
+import kitchenpos.common.Name;
+import kitchenpos.common.Price;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;

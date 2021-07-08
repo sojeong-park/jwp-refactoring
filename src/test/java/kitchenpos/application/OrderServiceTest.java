@@ -4,10 +4,11 @@ import kitchenpos.dao.MenuDao;
 import kitchenpos.dao.OrderDao;
 import kitchenpos.dao.OrderLineItemDao;
 import kitchenpos.dao.OrderTableDao;
-import kitchenpos.domain.Order;
-import kitchenpos.domain.OrderLineItem;
-import kitchenpos.domain.OrderStatus;
-import kitchenpos.domain.OrderTable;
+import kitchenpos.order.domain.Order;
+import kitchenpos.order.domain.OrderLineItem;
+import kitchenpos.order.domain.OrderStatus;
+import kitchenpos.order.domain.OrderTable;
+import kitchenpos.order.application.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -120,7 +121,7 @@ public class OrderServiceTest {
     }
 
     public static Order 주문_생성(Long id, Long orderTableId, String orderStatus, LocalDateTime orderedTime) {
-        return new Order(id, orderTableId, orderStatus, orderedTime);
+        return new Order(id, orderTableId, orderStatus);
     }
 
     private OrderLineItem 주문_수량_생성(Long seq, Long orderId, Long menuId, Long quantity) {
@@ -133,7 +134,7 @@ public class OrderServiceTest {
 
     private Order 수량이_0개인_주문_생성() {
         LocalDateTime now = LocalDateTime.now();
-        return new Order(1L, orderTable.getId(), OrderStatus.COOKING.name(), now);
+        return new Order(1L, orderTable.getId(), OrderStatus.COOKING.name());
     }
 
     private void 수량이_0개인_주문_생성_예외_발생함(Order order) {
