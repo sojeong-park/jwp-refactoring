@@ -1,23 +1,38 @@
 package kitchenpos.menu.domain;
 
+import kitchenpos.product.domain.Product;
+
+import javax.persistence.*;
+import java.math.BigDecimal;
+
+@Entity
 public class MenuProduct {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long seq;
-    private Long menuId;
-    private Long productId;
+
+    @ManyToOne
+    @JoinColumn(name = "menu_id")
+    private Menu menu;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+
     private long quantity;
 
     public MenuProduct() {}
 
-    public MenuProduct(Long seq, Long productId, long quantity) {
+    public MenuProduct(Long seq, Product product, long quantity) {
         this.seq = seq;
-        this.productId = productId;
+        this.product = product;
         this.quantity = quantity;
     }
 
-    public MenuProduct(Long seq, Long menuId, Long productId, long quantity) {
+    public MenuProduct(Long seq, Menu menu, Product product, long quantity) {
         this.seq = seq;
-        this.menuId = menuId;
-        this.productId = productId;
+        this.menu = menu;
+        this.product = product;
         this.quantity = quantity;
     }
 
@@ -25,31 +40,23 @@ public class MenuProduct {
         return seq;
     }
 
-    public void updateSeq(final Long seq) {
-        this.seq = seq;
+    public Menu getMenu() {
+        return menu;
     }
 
-    public Long getMenuId() {
-        return menuId;
-    }
-
-    public void updateMenuId(final Long menuId) {
-        this.menuId = menuId;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void updateProductId(final Long productId) {
-        this.productId = productId;
+    public Product getProduct() {
+        return product;
     }
 
     public long getQuantity() {
         return quantity;
     }
 
-    public void updateQuantity(final long quantity) {
-        this.quantity = quantity;
+    public BigDecimal getMenuPrice() {
+        return product.getPrice();
+    }
+
+    public BigDecimal multiplyPrice() {
+       return getMenuPrice().multiply(BigDecimal.valueOf(this.quantity));
     }
 }

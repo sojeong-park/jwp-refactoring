@@ -39,6 +39,14 @@ public class Menu {
         this.menuProducts = new MenuProducts(menuProducts, this.price.getPrice());
     }
 
+    public Menu(Long id, Name name, Price price, MenuGroup menuGroup, List<MenuProduct> menuProducts) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.menuGroup = menuGroup;
+        this.menuProducts = new MenuProducts(menuProducts, this.price.getPrice());
+    }
+
     public Long getId() {
         return id;
     }

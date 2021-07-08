@@ -17,21 +17,22 @@ public class MenuProducts {
 
     public MenuProducts(List<MenuProduct> menuProducts, BigDecimal price) {
         BigDecimal sum = calculateSum(menuProducts, price);
-        isValidSum(sum, price);
+        validSum(sum, price);
         this.menuProducts = menuProducts;
     }
 
     private BigDecimal calculateSum(List<MenuProduct> menuProducts, BigDecimal price) {
         BigDecimal sum = BigDecimal.ZERO;
         for (final MenuProduct menuProduct : menuProducts) {
-            sum = sum.add(price.multiply(BigDecimal.valueOf(menuProduct.getQuantity())));
+            menuProduct.multiplyPrice();
+            sum = sum.add(menuProduct.multiplyPrice());
         }
         return sum;
     }
 
-    private void isValidSum(BigDecimal sum, BigDecimal price) {
+    private void validSum(BigDecimal sum, BigDecimal price) {
         if (price.compareTo(sum) > 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("메뉴가격은 메뉴에 등록된 상품 가격의 합보다 작거나 같아야합니다.");
         }
     }
 

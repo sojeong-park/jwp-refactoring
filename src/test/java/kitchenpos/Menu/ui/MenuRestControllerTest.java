@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static kitchenpos.Menu.application.MenuServiceTest.메뉴_생성;
+//import static kitchenpos.Menu.application.MenuServiceTest.메뉴_생성;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -50,7 +50,7 @@ public class MenuRestControllerTest {
     @Autowired
     MenuRestController menuRestController;
 
-    @BeforeEach
+/*    @BeforeEach
     void setUp() {
         setUpMockMvc(menuRestController);
         MenuGroup menuGroup = new MenuGroup(1L, "치킨들");
@@ -117,5 +117,5 @@ public class MenuRestControllerTest {
     private ResultActions 메뉴_목록_조회_요청() throws Exception {
         return mockMvc.perform(get(MENUS_URI)
                 .contentType(MediaType.APPLICATION_JSON));
-    }
+    }*/
 }

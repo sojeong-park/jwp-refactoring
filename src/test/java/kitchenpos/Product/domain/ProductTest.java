@@ -3,6 +3,7 @@ package kitchenpos.Product.domain;
 import kitchenpos.product.domain.Name;
 import kitchenpos.product.domain.Price;
 import kitchenpos.product.domain.Product;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -13,14 +14,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Product 도메인 테스트")
 public class ProductTest {
+    private Product product;
+
+    @BeforeEach
+    void setUp() {
+        product = 상품_생성("뿌링클", new BigDecimal(18000));
+    }
+
     @Test
     @DisplayName("상품 등록 테스트")
     void create() {
-        BigDecimal price = new BigDecimal(18000);
-        Product product = new Product(new Name("뿌링클"), new Price(price));
-
-        assertThat(product.getName()).isEqualTo("뿌링클");
-        assertThat(product.getPrice()).isEqualTo(price);
+        상품_생성됨(product);
     }
 
     @Test
@@ -29,7 +33,16 @@ public class ProductTest {
         BigDecimal price = new BigDecimal(-1);
 
         assertThatThrownBy(() -> {
-            new Product(new Name("뿌링클"), new Price(price));
+            상품_생성("뿌링클", price);
         }).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    public static Product 상품_생성(String 뿌링클, BigDecimal price) {
+        return new Product(new Name("뿌링클"), new Price(price));
+    }
+
+    private void 상품_생성됨(Product product) {
+        assertThat(product.getName()).isEqualTo(product.getName());
+        assertThat(product.getPrice()).isEqualTo(product.getPrice());
     }
 }

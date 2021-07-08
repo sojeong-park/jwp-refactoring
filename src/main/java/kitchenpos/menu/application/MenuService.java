@@ -1,12 +1,15 @@
 package kitchenpos.menu.application;
 
 import kitchenpos.menu.domain.*;
+import kitchenpos.menu.dto.MenuProductRequest;
 import kitchenpos.menu.dto.MenuRequest;
 import kitchenpos.menu.dto.MenuResponse;
 import kitchenpos.product.domain.Product;
 import kitchenpos.product.domain.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,17 +31,15 @@ public class MenuService {
 
     @Transactional
     public MenuResponse create(final MenuRequest request) {
-        hasMenuProducts(request.getMenuProducts());
-        MenuGroup menuGroup = menuGroupRepository.findById(request.getMenuGroupId()).orElseThrow(IllegalArgumentException::new);
-        Menu createdMenu = menuRepository.save(new Menu(request.getName(), request.getPrice(), menuGroup, request.getMenuProducts()));
+        List<MenuProduct> menuProducts = createMenuProducts(request.getMenuProducts());
+        MenuGroup menuGroup = findMenuGroupById(request.getMenuGroupId());
+        Menu createdMenu = menuRepository.save(new Menu(request.getName(), request.getPrice(), menuGroup, menuProducts));
         return MenuResponse.of(createdMenu);
     }
 
-    private void hasMenuProducts(List<MenuProduct> menuProducts) {
-        for (final MenuProduct menuProduct : menuProducts) {
-            final Product product = productRepository.findById(menuProduct.getProductId())
-                    .orElseThrow(IllegalArgumentException::new);
-        }
+    public MenuGroup findMenuGroupById(Long menuGroupId) {
+        return menuGroupRepository.findById(menuGroupId).orElseThrow(IllegalArgumentException::new);
+
     }
 
     public List<MenuResponse> list() {
@@ -46,5 +47,18 @@ public class MenuService {
         return menus.stream()
                 .map(MenuResponse::of)
                 .collect(Collectors.toList());
+    }
+
+    public List<MenuProduct> createMenuProducts(List<MenuProductRequest> menuProducts) {
+        List<MenuProduct> list = new ArrayList<>();
+        for (final MenuProductRequest menuProduct : menuProducts) {
+            final Product product = getProductById(menuProduct.getProductId());
+            list.add(new MenuProduct(menuProduct.getSeq(), product, menuProduct.getQuantity()));
+        }
+        return list;
+    }
+
+    public Product getProductById(Long id) {
+        return productRepository.findById(id).orElseThrow(IllegalArgumentException::new);
     }
 }

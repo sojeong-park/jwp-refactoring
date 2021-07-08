@@ -33,9 +33,7 @@ public class MenuRequest {
         return menuGroupId;
     }
 
-    public List<MenuProduct> getMenuProducts() {
-        return menuProducts.stream()
-                .map(MenuProductRequest::toMenuProduct)
-                .collect(Collectors.toList());
+    public List<MenuProductRequest> getMenuProducts() {
+        return this.menuProducts;
     }
 }
