@@ -5,7 +5,14 @@ import kitchenpos.dao.OrderTableDao;
 import kitchenpos.dao.TableGroupDao;
 import kitchenpos.order.domain.OrderStatus;
 import kitchenpos.order.domain.OrderTable;
+import kitchenpos.order.domain.OrderTables;
 import kitchenpos.order.domain.TableGroup;
+import kitchenpos.order.domain.repository.OrderRepository;
+import kitchenpos.order.domain.repository.OrderTableRepository;
+import kitchenpos.order.domain.repository.TableGroupRepository;
+import kitchenpos.order.dto.OrderTableRequest;
+import kitchenpos.order.dto.TableGroupRequest;
+import kitchenpos.order.dto.TableGroupResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -18,71 +25,80 @@ import java.util.stream.Collectors;
 
 @Service
 public class TableGroupService {
-    private final OrderDao orderDao;
-    private final OrderTableDao orderTableDao;
-    private final TableGroupDao tableGroupDao;
+    private final OrderRepository orderRepository;
+    private final OrderTableRepository orderTableRepository;
+    private final TableGroupRepository tableGroupRepository;
 
-    public TableGroupService(final OrderDao orderDao, final OrderTableDao orderTableDao, final TableGroupDao tableGroupDao) {
-        this.orderDao = orderDao;
-        this.orderTableDao = orderTableDao;
-        this.tableGroupDao = tableGroupDao;
+    public TableGroupService(final OrderRepository orderRepository, final OrderTableRepository orderTableRepository, final TableGroupRepository tableGroupRepository) {
+        this.orderRepository = orderRepository;
+        this.orderTableRepository = orderTableRepository;
+        this.tableGroupRepository = tableGroupRepository;
     }
 
     @Transactional
-    public TableGroup create(final TableGroup tableGroup) {
-        final List<OrderTable> orderTables = tableGroup.getOrderTables();
-
-        if (CollectionUtils.isEmpty(orderTables) || orderTables.size() < 2) {
-            throw new IllegalArgumentException();
-        }
+    public TableGroupResponse create(final TableGroupRequest tableGroup) {
+        final List<OrderTableRequest> orderTables = tableGroup.getOrderTables();
 
         final List<Long> orderTableIds = orderTables.stream()
-                .map(OrderTable::getId)
+                .map(OrderTableRequest::getId)
                 .collect(Collectors.toList());
 
-        final List<OrderTable> savedOrderTables = orderTableDao.findAllByIdIn(orderTableIds);
+        final List<OrderTable> savedOrderTables = orderTableRepository.findAllById(orderTableIds);
 
+        //2. 저장된 주문테이블과 그룹지정하려는 주문 테이블의 개수가 같지 않으면 오류 발생한다.
         if (orderTables.size() != savedOrderTables.size()) {
             throw new IllegalArgumentException();
         }
 
-        for (final OrderTable savedOrderTable : savedOrderTables) {
-            if (!savedOrderTable.getEmpty() || Objects.nonNull(savedOrderTable.getTableGroupId())) {
-                throw new IllegalArgumentException();
-            }
-        }
+        final TableGroup tableGroup1 = new TableGroup(savedOrderTables);
 
-        tableGroup.updateCreatedDate(LocalDateTime.now());
+        //1. orderTableRequest 사이즈가 2개 이상인지 비어있지는 않은지 검증한다.
+//        if (CollectionUtils.isEmpty(orderTables) || orderTables.size() < 2) {
+//            throw new IllegalArgumentException();
+//        }
 
-        final TableGroup savedTableGroup = tableGroupDao.save(tableGroup);
+        //3. 모든 주문 테이블들이 빈테이블이 아니거나 groupid가 있다면(그룹지어져있다면) 단체로 묶을 수 없다.
+//        for (final OrderTable savedOrderTable : savedOrderTables) {
+//            if (!savedOrderTable.getEmpty() || Objects.nonNull(savedOrderTable.getTableGroupId())) {
+//                throw new IllegalArgumentException();
+//            }
+//        }
 
-        final Long tableGroupId = savedTableGroup.getId();
-        for (final OrderTable savedOrderTable : savedOrderTables) {
-            savedOrderTable.updateTableGroupId(tableGroupId);
-            savedOrderTable.updateEmpty(false);
-            orderTableDao.save(savedOrderTable);
-        }
-        savedTableGroup.updateOrderTables(savedOrderTables);
 
-        return savedTableGroup;
+        final TableGroup savedTableGroup = tableGroupRepository.save(tableGroup1);
+
+//        final Long tableGroupId = savedTableGroup.getId();
+//        for (final OrderTable savedOrderTable : savedOrderTables) {
+//            savedOrderTable.updateTableGroupId(tableGroupId);
+//            savedOrderTable.updateEmpty(false);
+//            orderTableDao.save(savedOrderTable);
+//        }
+//        savedTableGroup.updateOrderTables(savedOrderTables);
+
+        return TableGroupResponse.of(savedTableGroup);
     }
 
     @Transactional
     public void ungroup(final Long tableGroupId) {
-        final List<OrderTable> orderTables = orderTableDao.findAllByTableGroupId(tableGroupId);
+        //tableGroup 에 등록되어있는 orderTable을 해제한다.
+        //그러면 orderTable은? 같이 해제가 되면 좋겠다. -> d음..
+        final TableGroup tableGroup = tableGroupRepository.findById(tableGroupId).orElseThrow(IllegalArgumentException::new);
+        List<OrderTable> orderTables = tableGroup.getOrderTables();
+
+        //final List<OrderTable> orderTables = orderTableRepository.findAllByTableGroupId(tableGroupId);
 
         final List<Long> orderTableIds = orderTables.stream()
                 .map(OrderTable::getId)
                 .collect(Collectors.toList());
 
-        if (orderDao.existsByOrderTableIdInAndOrderStatusIn(
-                orderTableIds, Arrays.asList(OrderStatus.COOKING.name(), OrderStatus.MEAL.name()))) {
+        if (orderRepository.existsByOrderTableIdInAndOrderStatusIn(
+                orderTableIds, Arrays.asList(OrderStatus.COOKING, OrderStatus.MEAL))) {
             throw new IllegalArgumentException();
         }
-
-        for (final OrderTable orderTable : orderTables) {
-            orderTable.updateTableGroupId(null);
-            orderTableDao.save(orderTable);
-        }
+        tableGroup.upGroupOrderTables();
+//        for (final OrderTable orderTable : orderTables) {
+//            orderTable.updateTableGroupId(null);
+//            orderTableDao.save(orderTable);
+//        }
     }
 }

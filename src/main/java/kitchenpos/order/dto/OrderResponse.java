@@ -16,7 +16,7 @@ public class OrderResponse {
     public OrderResponse(Order order) {
         this.id = order.getId();
         this.orderTable = OrderTableResponse.of(order.getOrderTable());
-        this.orderStatus = order.getOrderStatus();
+        this.orderStatus = order.getOrderStatus().name();
         this.orderLineItems = order.getOrderLineItems();
     }
 

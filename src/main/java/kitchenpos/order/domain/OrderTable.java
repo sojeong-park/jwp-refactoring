@@ -1,6 +1,9 @@
 package kitchenpos.order.domain;
 
+import kitchenpos.common.NumberOfGuests;
+
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 public class OrderTable {
@@ -12,21 +15,27 @@ public class OrderTable {
     @JoinColumn(name = "table_group_id")
     private TableGroup tableGroup;
 
-    private int numberOfGuests;
+    private NumberOfGuests numberOfGuests;
     private boolean empty;
 
     public OrderTable() {}
 
     public OrderTable(Long id, int numberOfGuests, boolean empty) {
         this.id = id;
-        this.numberOfGuests = numberOfGuests;
+        this.numberOfGuests = new NumberOfGuests(numberOfGuests);
+        this.empty = empty;
+    }
+
+    public OrderTable(int numberOfGuests, boolean empty) {
+        this.tableGroup = null;
+        this.numberOfGuests = new NumberOfGuests(numberOfGuests);
         this.empty = empty;
     }
 
     public OrderTable(Long id, TableGroup tableGroup, int numberOfGuests, boolean empty) {
         this.id = id;
         this.tableGroup = tableGroup;
-        this.numberOfGuests = numberOfGuests;
+        this.numberOfGuests = new NumberOfGuests(numberOfGuests);
         this.empty = empty;
     }
 
@@ -38,16 +47,26 @@ public class OrderTable {
         return tableGroup;
     }
 
+    public Long getTableGroupId() {
+        return tableGroup.getId();
+    }
+
 //    public void updateTableGroupId(final Long tableGroupId) {
 //        this.tableGroupId = tableGroupId;
 //    }
 
     public int getNumberOfGuests() {
-        return numberOfGuests;
+        return numberOfGuests.number();
     }
 
     public void updateNumberOfGuests(final int numberOfGuests) {
-        this.numberOfGuests = numberOfGuests;
+        if (numberOfGuests < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (getEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        this.numberOfGuests = new NumberOfGuests(numberOfGuests);
     }
 
     public boolean getEmpty() {
@@ -55,6 +74,19 @@ public class OrderTable {
     }
 
     public void updateEmpty(final boolean empty) {
+        if (Objects.nonNull(getTableGroupId())) {
+            throw new IllegalArgumentException();
+        }
         this.empty = empty;
+    }
+
+    public void validRegisterOrderTable() {
+        if (!getEmpty() || Objects.nonNull(getTableGroupId())) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void unGroup() {
+        this.tableGroup = null;
     }
 }

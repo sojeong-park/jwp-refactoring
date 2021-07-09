@@ -1,4 +1,4 @@
-package kitchenpos.application;
+package kitchenpos.order.application;
 
 import kitchenpos.dao.MenuDao;
 import kitchenpos.dao.OrderDao;
@@ -214,7 +214,7 @@ public class OrderServiceTest {
     }
 
     private void 주문_상태_변경_요청(Order order) {
-        order.updateOrderStatus(OrderStatus.COOKING.name());
+        order.updateOrderStatus(OrderStatus.COOKING);
         orderService.changeOrderStatus(order.getId(), order);
     }
 }

@@ -1,4 +1,4 @@
-package kitchenpos.ui;
+package kitchenpos.order.ui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,8 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
-import static kitchenpos.application.OrderServiceTest.주문테이블_생성;
-import static kitchenpos.application.TableGroupServiceTest.단체_생성;
+import static kitchenpos.order.application.OrderServiceTest.주문테이블_생성;
+import static kitchenpos.order.application.TableGroupServiceTest.단체_생성;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;

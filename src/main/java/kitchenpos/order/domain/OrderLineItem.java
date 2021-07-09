@@ -1,5 +1,6 @@
 package kitchenpos.order.domain;
 
+import kitchenpos.common.Quantity;
 import kitchenpos.menu.domain.Menu;
 import kitchenpos.order.dto.OrderLineItemRequest;
 
@@ -19,7 +20,7 @@ public class OrderLineItem {
     @JoinColumn(name = "menu_id")
     private Menu menu;
 
-    private long quantity;
+    private Quantity quantity;
 
     public OrderLineItem() {}
 
@@ -27,7 +28,17 @@ public class OrderLineItem {
         this.seq = seq;
         this.order = order;
         this.menu = menu;
+        this.quantity = new Quantity(quantity);
+    }
+
+    public OrderLineItem(Order order, Menu menu, Quantity quantity) {
+        this.order = order;
+        this.menu = menu;
         this.quantity = quantity;
+    }
+
+    public static OrderLineItem of(Order order, Menu menu, Quantity quantity) {
+        return new OrderLineItem(order, menu, quantity);
     }
 
     public Long getSeq() {
@@ -47,11 +58,11 @@ public class OrderLineItem {
     }
 
     public long getQuantity() {
-        return quantity;
+        return quantity.amount();
     }
 
     public void updateQuantity(final long quantity) {
-        this.quantity = quantity;
+        this.quantity = new Quantity(quantity);
     }
 
 //    public static OrderLineItem to(OrderLineItemRequest request) {

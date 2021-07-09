@@ -18,27 +18,27 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "order_table_id")
     private OrderTable orderTable;
 
-    private String orderStatus;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus orderStatus;
 
     @Embedded
     private OrderLineItems orderLineItems;
 
     public Order() {}
 
-    public Order(Long id, OrderTable orderTable, String orderStatus, List<OrderLineItem> orderLineItems) {
+    public Order(Long id, OrderTable orderTable, OrderStatus orderStatus, List<OrderLineItem> orderLineItems) {
         this.id = id;
         this.orderTable = orderTable;
         this.orderStatus = orderStatus;
         this.orderLineItems = new OrderLineItems(orderLineItems);
-        updateOrderStatus(OrderStatus.COOKING.name());
+        updateOrderStatus(orderStatus);
     }
 
-    public Order(OrderTable orderTable, String orderStatus, List<OrderLineItem> orderLineItems) {
+    public Order(OrderTable orderTable, OrderStatus orderStatus) {
         this.id = id;
         this.orderTable = orderTable;
         this.orderStatus = orderStatus;
-        this.orderLineItems = new OrderLineItems(orderLineItems);
-        updateOrderStatus(OrderStatus.COOKING.name());
+        updateOrderStatus(orderStatus);
     }
 
     public Long getId() {
@@ -57,16 +57,16 @@ public class Order extends BaseEntity {
 //        this.orderTableId = orderTableId;
 //    }
 
-    public String getOrderStatus() {
+    public OrderStatus getOrderStatus() {
         return orderStatus;
     }
 
-    public void updateOrderStatus(final String orderStatus) {
+    public void updateOrderStatus(final OrderStatus orderStatus) {
         validCompletionStatus(orderStatus);
         this.orderStatus = orderStatus;
     }
 
-    public void validCompletionStatus(String orderStatus) {
+    public void validCompletionStatus(OrderStatus orderStatus) {
         if (orderStatus.equals(orderStatus)) {
             throw new IllegalArgumentException();
         }
@@ -79,7 +79,7 @@ public class Order extends BaseEntity {
         return orderLineItems.getOrderLineItems();
     }
 
-    public void updateOrderLineItems(final List<OrderLineItem> orderLineItems) {
-        this.orderLineItems = orderLineItems;
-    }
+//    public void updateOrderLineItems(final List<OrderLineItem> orderLineItems) {
+//        this.orderLineItems = orderLineItems;
+//    }
 }

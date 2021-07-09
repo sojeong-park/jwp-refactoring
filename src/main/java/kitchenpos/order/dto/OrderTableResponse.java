@@ -4,7 +4,7 @@ import kitchenpos.order.domain.OrderTable;
 
 public class OrderTableResponse {
     private Long id;
-    private Long tableGroupId;
+    private TableGroupResponse tableGroupId;
     private int numberOfGuests;
     private boolean empty;
 
@@ -12,7 +12,7 @@ public class OrderTableResponse {
 
     public OrderTableResponse(OrderTable orderTable) {
         this.id = orderTable.getId();
-        this.tableGroupId = orderTable.getTableGroupId();
+        this.tableGroupId = new TableGroupResponse(orderTable.getTableGroup());
         this.numberOfGuests = orderTable.getNumberOfGuests();
         this.empty = orderTable.getEmpty();
     }
