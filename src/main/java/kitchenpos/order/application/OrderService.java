@@ -38,26 +38,11 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(final OrderRequest orderRequest) {
-        final List<OrderLineItemRequest> orderLineItemsRequest = orderRequest.getOrderLineItems();
-
-        List<Menu> menus = findMenuAllById(orderLineItemsRequest);
-        validOrderLineItemEmpty(orderLineItemsRequest);
-        validOrderLIneItemCount(orderLineItemsRequest, menus.size());
-
-        final OrderTable orderTable = findOrderTableById(orderRequest.getOrderTableId());
-        validOrderTableEmpty(orderTable);
-
-        final Order savedOrder =new Order(orderTable, OrderStatus.COOKING);
-
-        for (OrderLineItemRequest orderLineItemRequest : orderLineItemsRequest) {
-            Menu findMenu = menus.stream()
-                    .filter(menu -> menu.getId().equals(orderLineItemRequest.getMenuId()))
-                    .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
-            OrderLineItem.of(savedOrder, findMenu, new Quantity(orderLineItemRequest.getQuantity()));
-        }
-
-        return OrderResponse.of(orderRepository.save(savedOrder));
+        validOrderLineItem(orderRequest.getOrderLineItems());
+        final List<OrderLineItem> orderLineItems = orderRequest.toOrderLineItems();
+        final OrderTable orderTable = findOrderTable(orderRequest);
+        final Order persistOrder = orderRepository.save(new Order(orderTable, OrderStatus.COOKING, orderLineItems));
+        return OrderResponse.of(persistOrder);
     }
 
     public List<OrderResponse> list() {
@@ -69,30 +54,31 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse changeOrderStatus(final Long orderId, final Order order) {
+    public OrderResponse changeOrderStatus(final Long orderId, final OrderRequest order) {
         final Order savedOrder = findOrderById(orderId);
         savedOrder.updateOrderStatus(order.getOrderStatus());
         return OrderResponse.of(savedOrder);
     }
 
-    private void validOrderTableEmpty(OrderTable orderTable) {
-        if (orderTable.getEmpty()) {
-            throw new IllegalArgumentException();
-        }
+    private void validOrderLineItem(List<OrderLineItemRequest> orderLineItemsRequest) {
+        List<Menu> menus = findMenuAllById(orderLineItemsRequest);
+        validOrderLineItemEmpty(orderLineItemsRequest);
+        validOrderLIneItemCount(orderLineItemsRequest, menus.size());
     }
 
-    private OrderTable findOrderTableById(Long orderTableId) {
-        return orderTableRepository.findById(orderTableId).orElseThrow(IllegalArgumentException::new);
+    private OrderTable findOrderTable(OrderRequest orderRequest) {
+        return orderTableRepository.findById(orderRequest.getOrderTableId())
+                .orElseThrow(() -> new IllegalArgumentException("등록이 안된 주문 테이블에서는 주문할 수 없습니다."));
     }
 
     private void validOrderLineItemEmpty(List<OrderLineItemRequest> orderLineItemsRequest) {
         if (CollectionUtils.isEmpty(orderLineItemsRequest)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("주문에는 메뉴가 1개 이상 필요합니다.");
         }
     }
     private void validOrderLIneItemCount(List<OrderLineItemRequest> orderLineItemsRequest, int menuSize) {
         if (orderLineItemsRequest.size() != menuSize) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("등록된 메뉴만 주문할 수 있습니다.");
         }
     }
 
@@ -103,7 +89,7 @@ public class OrderService {
         return menuRepository.findAllById(menuIds);
     }
 
-    private Order findOrderById(Long orderId) {
+    public Order findOrderById(Long orderId) {
         return orderRepository.findById(orderId).orElseThrow(IllegalArgumentException::new);
     }
 }

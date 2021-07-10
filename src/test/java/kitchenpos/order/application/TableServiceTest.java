@@ -1,10 +1,11 @@
 package kitchenpos.order.application;
 
-import kitchenpos.dao.OrderDao;
-import kitchenpos.dao.OrderTableDao;
-import kitchenpos.order.domain.OrderStatus;
-import kitchenpos.order.domain.OrderTable;
+import kitchenpos.order.domain.*;
 import kitchenpos.order.application.TableService;
+import kitchenpos.order.domain.repository.OrderRepository;
+import kitchenpos.order.domain.repository.OrderTableRepository;
+import kitchenpos.order.dto.OrderTableRequest;
+import kitchenpos.order.dto.OrderTableResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @DisplayName("주문 테이블 관련 기능 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -27,194 +31,147 @@ public class TableServiceTest {
     private OrderTable orderTable2;
 
     @Mock
-    private OrderDao orderDao;
+    private OrderRepository orderRepository;
 
     @Mock
-    private OrderTableDao orderTableDao;
+    private OrderTableRepository orderTableRepository;
 
     @InjectMocks
     private TableService tableService;
 
-    @BeforeEach
-    void setUp() {
-        orderTable1 = 주문테이블_생성(1L, 0, true);
-        orderTable2 = 주문테이블_생성(2L, 0, true);
-    }
-
-    @DisplayName("단체 지정되지 않은 주문 테이블을 등록한다.")
+    @DisplayName("주문 테이블을 생성한다.")
     @Test
     void create() {
-        given(orderTableDao.save(orderTable1)).willReturn(orderTable1);
+        OrderTableRequest orderTableRequest = mock(OrderTableRequest.class);
+        OrderTable orderTable = mock(OrderTable.class);
 
-        OrderTable createdOrderTable = 주문테이블_생성_요청();
+        when(orderTable.getId()).thenReturn(1L);
+        when(orderTableRepository.save(any())).thenReturn(orderTable);
 
-        주문테이블_생성됨(createdOrderTable);
+        OrderTableResponse orderTableResponse = tableService.create(orderTableRequest);
+
+        assertThat(orderTableResponse).isNotNull();
+        assertThat(orderTableResponse.getId()).isEqualTo(1L);
     }
 
-    @DisplayName("주문 테이블 조회한다.")
+    @DisplayName("주문 테이블 목록을 조회한다.")
     @Test
     void list() {
-        given(orderTableDao.findAll()).willReturn(Arrays.asList(orderTable1, orderTable2));
+        OrderTable orderTable = mock(OrderTable.class);
 
-        List<OrderTable> orderTables = 주문테이블_목록_조회요청();
+        when(orderTable.getId()).thenReturn(1L);
+        when(orderTableRepository.findAll()).thenReturn(Arrays.asList(orderTable));
 
-        주문테이블_목록_조회됨(orderTables);
+        List<OrderTableResponse> orderTableResponses = tableService.list();
+
+        assertThat(orderTableResponses).hasSize(1);
+        assertThat(orderTableResponses.get(0).getId()).isEqualTo(1L);
     }
 
-    @DisplayName("단체에 속한 주문 테이블은 비울수 없다.")
+    @DisplayName("식사중과 요리중은 주문 테이블을 비울 수 없다.")
     @Test
-    void changeEmpty_단체속한_경우_예외() {
-        주문테이블_단체_설정();
+    void empty_예외1() {
+        OrderTable orderTable = new OrderTable(1L, null, 1, false);
 
-        단체에_속한_주문테이블_해제시_예외발생();
+        OrderTableRequest orderTableRequest = new OrderTableRequest(1L, null, 1, false);
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
 
+        식사중과_요리중_주문_테이블을_비울_경우_예외_발생함(orderTableRequest);
     }
 
-    @DisplayName("주문상태가 조리 또는 식사가 아니라면 예외 발생")
+    @DisplayName("그룹 으로 묶여있는 경우 테이블을 비을 수 없다.")
     @Test
-    void changeEmpty_주문상태_완료_예외() {
-        주문상태_완료_설정();
-        주문상태_완료일경우_해제시_예외발생();
+    void empty_예외2() {
+        OrderTable orderTable = new OrderTable(1L, mock(TableGroup.class), 1, false);
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
+
+        그룹화된_주문테이블_비울경우_예외_발생함();
     }
 
-    @DisplayName("주문테이블을 비울 수 있다.")
+    @DisplayName("주문 테이블을 비울 수 있다.")
     @Test
-    void changeEmpty() {
-        주문테이블_비움_설정();
-
-        OrderTable orderTable = 주문테이블_비움요청();
-
-        주문테이블_비움_완료됨(orderTable);
+    void empty() {
+        OrderTable orderTable = mock(OrderTable.class);
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
+        tableService.changeEmpty(1L, mock(OrderTableRequest.class));
     }
 
-    @DisplayName("주문 테이블의 손님이 1명 이상이어야 한다.")
+    @DisplayName("등록된 테이블만 인원수를 변경할 수 있다.")
     @Test
-    void changeNumberOfGuests_손님_0명_예외() {
-        주문테이블_손님_수_0명_이하_설정();
+    void changeGeust_예외1() {
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        주문테이블_손님_수_0명_이하로_변경시_예외발생();
+        등록된_테이블_아닐경우_예외_발생함();
     }
 
-    @DisplayName("주문 테이블 손님 수 변경시 비어있지 않아야 한다.")
+    @DisplayName("변경하려는 인원수는 0보다 커야한다.")
     @Test
-    void changeNumberOfGuests_주문테이블_없을경우_예외() {
-        주문테이블_비어있음_설정();
+    void changeGuest_예외2() {
+        OrderTable orderTable = new OrderTable(4, false);
+        OrderTableRequest orderTableRequest = new OrderTableRequest(1L, null, -1, false);
 
-        주문테이블_손님_수_1명이상_설정();
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
 
-        주문테이블_손님_수_변경요청시_비어있으면_예외_발생();
+        변경_인원수_0명_이하일_경우_예외_발생함(orderTableRequest);
     }
 
-    @DisplayName("주문 테이블의 손님의 수를 입력한다.")
+    @DisplayName("테이블이 비어있다면 인원수 변경할수 없다.")
     @Test
-    void changeNumberOfGuests() {
-        주문테이블_손님_수_1명_이상_입력();
+    void changeGuest_예외3() {
+        OrderTable orderTable = new OrderTable(1, true);
+        OrderTableRequest orderTableRequest = new OrderTableRequest(1L, 1L, 3, false);
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
 
-        OrderTable orderTable = 주문테이블_손님_수_변경_요청();
-
-        주문테이블_손님_수_변경됨(orderTable);
+        테이블이_비어있을_경우_인원수_변경시_예외_발생함(orderTableRequest);
     }
 
-    public static OrderTable 주문테이블_생성(long id, int numberOfGuests, boolean isEmpty) {
-        return new OrderTable(id, numberOfGuests, isEmpty);
+    @DisplayName("인원수를 변경할 수 있다.")
+    @Test
+    void changeGuest() {
+        OrderTable orderTable = new OrderTable(1L, mock(TableGroup.class), 1, false);
+        OrderTableRequest orderTableRequest = new OrderTableRequest(1L, 1L, 3, false);
+
+        when(orderTableRepository.findById(anyLong())).thenReturn(Optional.of(orderTable));
+
+        OrderTableResponse response = 인원수_변경_요청(1L, orderTableRequest);
+
+        인원수_변경됨(response, orderTableRequest);
     }
 
-    private OrderTable 주문테이블_생성_요청() {
-        return tableService.create(this.orderTable1);
+    private void 식사중과_요리중_주문_테이블을_비울_경우_예외_발생함(OrderTableRequest orderTableRequest) {
+        assertThatThrownBy(() -> tableService.changeEmpty(1L, orderTableRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("주문 테이블의 주문 상태가 조리 또는 식사인 경우 테이블을 비울 수 없습니다.");
     }
 
-    private void 주문테이블_생성됨(OrderTable createdOrderTable) {
-        assertThat(createdOrderTable.getId()).isEqualTo(this.orderTable1.getId());
-        assertThat(createdOrderTable.getNumberOfGuests()).isEqualTo(this.orderTable1.getNumberOfGuests());
-        assertThat(createdOrderTable.isEmpty()).isEqualTo(this.orderTable1.isEmpty());
+    private void 그룹화된_주문테이블_비울경우_예외_발생함() {
+        assertThatThrownBy(() -> tableService.changeEmpty(1L, mock(OrderTableRequest.class)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("그룹으로 묶여있는 경우 테이블을 비을 수 없습니다.");
     }
 
-    private List<OrderTable> 주문테이블_목록_조회요청() {
-        return tableService.list();
-    }
-
-    private void 주문테이블_목록_조회됨(List<OrderTable> orderTables) {
-        assertThat(orderTables).containsExactly(orderTable1, orderTable2);
-        assertThat(orderTables.get(0).getId()).isEqualTo(orderTable1.getId());
-        assertThat(orderTables.get(0).getNumberOfGuests()).isEqualTo(orderTable1.getNumberOfGuests());
-        assertThat(orderTables.get(0).isEmpty()).isEqualTo(orderTable1.isEmpty());
-        assertThat(orderTables.get(1).getId()).isEqualTo(orderTable2.getId());
-        assertThat(orderTables.get(1).getNumberOfGuests()).isEqualTo(orderTable2.getNumberOfGuests());
-        assertThat(orderTables.get(1).isEmpty()).isEqualTo(orderTable2.isEmpty());
-    }
-
-    private void 주문테이블_단체_설정() {
-        given(orderTableDao.findById(orderTable1.getId())).willReturn(Optional.of(orderTable1));
-        orderTable1.updateTableGroupId(1L);
-    }
-
-    private void 단체에_속한_주문테이블_해제시_예외발생() {
-        assertThatThrownBy(() -> tableService.changeEmpty(orderTable1.getId(), orderTable1))
+    private void 등록된_테이블_아닐경우_예외_발생함() {
+        assertThatThrownBy(() -> tableService.changeNumberOfGuests(1L, mock(OrderTableRequest.class)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    private void 주문상태_완료_설정() {
-        given(orderTableDao.findById(orderTable1.getId())).willReturn(Optional.of(orderTable1));
-        given(orderDao.existsByOrderTableIdAndOrderStatusIn(orderTable1.getId(), Arrays.asList(OrderStatus.COOKING.name(), OrderStatus.MEAL.name()))).willReturn(true);
-
+    private void 변경_인원수_0명_이하일_경우_예외_발생함(OrderTableRequest orderTableRequest) {
+        assertThatThrownBy(() -> tableService.changeNumberOfGuests(1L, orderTableRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("변경하려는 인원수는 0보다 커야합니다.");
     }
 
-    private void 주문상태_완료일경우_해제시_예외발생() {
-        assertThatThrownBy(() -> tableService.changeEmpty(orderTable1.getId(), orderTable1))
-                .isInstanceOf(IllegalArgumentException.class);
+    private void 테이블이_비어있을_경우_인원수_변경시_예외_발생함(OrderTableRequest orderTableRequest) {
+        assertThatThrownBy(() -> tableService.changeNumberOfGuests(1L, orderTableRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("비어있는 테이블은 인원수 변경이 불가합니다.");
     }
 
-    private void 주문테이블_비움_설정() {
-        given(orderTableDao.findById(orderTable1.getId())).willReturn(Optional.of(orderTable1));
-        given(orderDao.existsByOrderTableIdAndOrderStatusIn(orderTable1.getId(), Arrays.asList(OrderStatus.COOKING.name(), OrderStatus.MEAL.name()))).willReturn(false);
-        given(orderTableDao.save(orderTable1)).willReturn(orderTable1);
-        orderTable1.updateEmpty(false);
+    private OrderTableResponse 인원수_변경_요청(Long orderTableId, OrderTableRequest request) {
+        return tableService.changeNumberOfGuests(1L, request);
     }
 
-    private OrderTable 주문테이블_비움요청() {
-        return tableService.changeEmpty(orderTable1.getId(), orderTable1);
-    }
-
-    private void 주문테이블_비움_완료됨(OrderTable orderTable) {
-        assertThat(orderTable.isEmpty()).isFalse();
-    }
-
-    private void 주문테이블_손님_수_0명_이하_설정() {
-        orderTable1.updateEmpty(false);
-        orderTable1.updateNumberOfGuests(-10);
-    }
-
-    private void 주문테이블_손님_수_0명_이하로_변경시_예외발생() {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> tableService.changeNumberOfGuests(orderTable1.getId(), orderTable1));
-    }
-
-    private void 주문테이블_비어있음_설정() {
-        orderTable1.updateEmpty(true);
-    }
-
-    private void 주문테이블_손님_수_변경요청시_비어있으면_예외_발생() {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> tableService.changeNumberOfGuests(orderTable1.getId(), orderTable1));
-    }
-
-    private void 주문테이블_손님_수_1명이상_설정() {
-        orderTable1.updateNumberOfGuests(15);
-    }
-
-    private void 주문테이블_손님_수_1명_이상_입력() {
-        given(orderTableDao.findById(orderTable1.getId())).willReturn(Optional.of(orderTable1));
-        given(orderTableDao.save(orderTable1)).willReturn(orderTable1);
-        orderTable1.updateEmpty(false);
-        orderTable1.updateNumberOfGuests(15);
-    }
-
-    private OrderTable 주문테이블_손님_수_변경_요청() {
-        return tableService.changeNumberOfGuests(orderTable1.getId(), orderTable1);
-    }
-
-    private void 주문테이블_손님_수_변경됨(OrderTable orderTable) {
-        assertThat(orderTable.getNumberOfGuests()).isEqualTo(orderTable1.getNumberOfGuests());
-        assertThat(orderTable.getNumberOfGuests()).isEqualTo(15);
+    private void 인원수_변경됨(OrderTableResponse response, OrderTableRequest orderTableRequest) {
+        assertThat(response.getNumberOfGuests()).isEqualTo(orderTableRequest.getNumberOfGuests());
     }
 }

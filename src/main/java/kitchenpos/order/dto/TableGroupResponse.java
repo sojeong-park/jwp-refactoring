@@ -26,4 +26,12 @@ public class TableGroupResponse {
                 .map(OrderTableResponse::of)
                 .collect(Collectors.toList());
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public List<OrderTableResponse> getOrderTableResponseList() {
+        return orderTableResponseList;
+    }
 }

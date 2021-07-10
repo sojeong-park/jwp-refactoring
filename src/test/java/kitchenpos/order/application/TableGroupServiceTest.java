@@ -1,12 +1,13 @@
 package kitchenpos.order.application;
 
-import kitchenpos.dao.OrderDao;
-import kitchenpos.dao.OrderTableDao;
-import kitchenpos.dao.TableGroupDao;
-import kitchenpos.order.domain.OrderStatus;
-import kitchenpos.order.domain.OrderTable;
-import kitchenpos.order.domain.TableGroup;
+import kitchenpos.order.domain.*;
 import kitchenpos.order.application.TableGroupService;
+import kitchenpos.order.domain.repository.OrderRepository;
+import kitchenpos.order.domain.repository.OrderTableRepository;
+import kitchenpos.order.domain.repository.TableGroupRepository;
+import kitchenpos.order.dto.OrderTableRequest;
+import kitchenpos.order.dto.TableGroupRequest;
+import kitchenpos.order.dto.TableGroupResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,192 +23,167 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 @DisplayName("단체 그룹 관련 기능 테스트")
 @ExtendWith(MockitoExtension.class)
 public class TableGroupServiceTest {
-    private OrderTable orderTable1;
-    private OrderTable orderTable2;
-    private List<OrderTable> orderTables;
+    private TableGroupRequest tableGroupRequest;
+    private OrderTable orderTable;
+    private OrderTableRequest orderTableRequest;
 
     @Mock
-    OrderDao orderDao;
+    OrderRepository orderRepository;
 
     @Mock
-    OrderTableDao orderTableDao;
+    OrderTableRepository orderTableRepository;
 
     @Mock
-    TableGroupDao tableGroupDao;
+    TableGroupRepository tableGroupRepository;
 
     @InjectMocks
     TableGroupService tableGroupService;
 
-    @BeforeEach
-    void setUp() {
-        orderTables = new ArrayList<>();
+    @DisplayName("그룹화되어 있는 테이블은 그룹화 할 수 없습니다.")
+    @Test
+    void create_그룹화_되어있는_테이블_그룹화_예외() {
 
-        orderTable1 = 주문_테이블_생성(1L, 15, true);
-        orderTable2 = 주문_테이블_생성(1L,  2, true);
+        TableGroupRequest tableGroupRequest = mock(TableGroupRequest.class);
+
+        OrderTableRequest orderTableRequest = 주문_테이블_요청값_생성(1L,1L,2,false);
+        OrderTableRequest orderTableRequest2 = 주문_테이블_요청값_생성(2L,1L,2,false);
+
+        TableGroup tableGroup = mock(TableGroup.class);
+        OrderTable orderTable = new OrderTable(1L,tableGroup, 3, true);
+        OrderTable orderTable2 = new OrderTable(2L,tableGroup, 3, true);
+
+        when(tableGroupRequest.getOrderTables()).thenReturn(Arrays.asList(orderTableRequest, orderTableRequest2));
+        when(orderTableRepository.findAllById(anyList())).thenReturn(Arrays.asList(orderTable, orderTable2));
+
+        그룹화_되어있는_테이블_그룹화_예외_발생함(tableGroupRequest);
+
     }
 
-    @DisplayName("비어있는 주문 테이블이 2개 이상일때 등록이 가능하다.")
+    private void 그룹화_되어있는_테이블_그룹화_예외_발생함(TableGroupRequest tableGroupRequest) {
+        assertThatThrownBy(() -> tableGroupService.create(tableGroupRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("이미 그룹으로 묶여있는 경우 그룹화 할 수 없습니다.");
+    }
+
+    @DisplayName("비어있지 않은 테이블은 그룹화 할 수 없습니다.")
+    @Test
+    void create_비어있지_않은_테이블_그룹화_예외() {
+        TableGroupRequest tableGroupRequest = mock(TableGroupRequest.class);
+
+        OrderTableRequest orderTableRequest = 주문_테이블_요청값_생성(1L,1L,2,false);
+        OrderTableRequest orderTableRequest2 = 주문_테이블_요청값_생성(2L,1L,2,false);
+
+        TableGroup tableGroup = mock(TableGroup.class);
+        OrderTable orderTable = new OrderTable(1L, tableGroup, 3, false);
+        OrderTable orderTable2 = new OrderTable(2L, tableGroup, 3, false);
+
+        when(tableGroupRequest.getOrderTables()).thenReturn(Arrays.asList(orderTableRequest, orderTableRequest2));
+        when(orderTableRepository.findAllById(anyList())).thenReturn(Arrays.asList(orderTable, orderTable2));
+
+        비어있지_않은_테이블_그룹화_예외_발생함(tableGroupRequest);
+    }
+
+    private void 비어있지_않은_테이블_그룹화_예외_발생함(TableGroupRequest tableGroupRequest) {
+        assertThatThrownBy(() -> tableGroupService.create(tableGroupRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("비어있지 않은 테이블은 그룹화 할 수 없습니다.");
+    }
+
+    @DisplayName("등록된 주문테이블만 그룹화 할 수 있다.")
+    @Test
+    void create_등록되지_않은_주문테이블_그룹화_예외() {
+        TableGroupRequest tableGroupRequest = mock(TableGroupRequest.class);
+
+        OrderTableRequest orderTableRequest = 주문_테이블_요청값_생성(1L,null,2,false);
+        OrderTableRequest orderTableRequest2 = 주문_테이블_요청값_생성(2L,null,2,false);
+
+
+        when(tableGroupRequest.getOrderTables()).thenReturn(Arrays.asList(orderTableRequest, orderTableRequest2));
+        when(orderTableRepository.findAllById(anyList())).thenReturn(new ArrayList<>());
+
+        등록되지_않은_주문테이블_그룹화_예외_발생함(tableGroupRequest);
+    }
+
+    private OrderTableRequest 주문_테이블_요청값_생성(Long id, Long tableGroupId, int numberOfGuests, boolean empty) {
+        return new OrderTableRequest(id, tableGroupId, numberOfGuests, empty);
+    }
+
+    private void 등록되지_않은_주문테이블_그룹화_예외_발생함(TableGroupRequest tableGroupRequest) {
+        assertThatThrownBy(() -> tableGroupService.create(tableGroupRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("등록된 주문테이블만 그룹화 할 수 있습니다");
+    }
+
+    @DisplayName("그룹테이블은 2개 이상이어야 그룹화가 가능합니다")
     @Test
     void create_주문테이블_2개_미만_예외() {
-        TableGroup tableGroup = 단체에_주문테이블_1개_등록();
+        TableGroupRequest tableGroupRequest = mock(TableGroupRequest.class);
+        OrderTable orderTable = mock(OrderTable.class);
 
-        주문테이블_1개인_단체등록시_예외_발생(tableGroup);
+        OrderTableRequest orderTableRequest = 주문_테이블_요청값_생성(1L,null,2,false);
+
+        when(tableGroupRequest.getOrderTables()).thenReturn(Arrays.asList(orderTableRequest));
+        when(orderTableRepository.findAllById(anyList())).thenReturn(Arrays.asList(orderTable));
+
+        주문테이블_2개_미만_예외_발생(tableGroupRequest);
     }
 
-    @DisplayName("단체 지정은 중복될수 없다.")
-    @Test
-    void create_중복_예외() {
-        TableGroup tableGroup = 단체에_주문테이블_중복_등록();
-
-        단체에_주문테이블_중복_등록시_예외발생(tableGroup);
+    private void 주문테이블_2개_미만_예외_발생(TableGroupRequest tableGroupRequest) {
+        assertThatThrownBy(() -> tableGroupService.create(tableGroupRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("그룹테이블은 2개 이상이어야 그룹화가 가능합니다.");
     }
 
-    @DisplayName("단체를 지정한다.")
+    @DisplayName("주문 테이블을 그룹화 한다.")
     @Test
     void create() {
-        TableGroup tableGroup = 단체에_주문테이블_정상_등록();
+        TableGroupRequest tableGroupRequest = mock(TableGroupRequest.class);
 
-        단체_지정전_설정(tableGroup);
+        OrderTableRequest orderTableRequest = 주문_테이블_요청값_생성(1L,null,2,false);
+        OrderTableRequest orderTableRequest2 = 주문_테이블_요청값_생성(2L,null,2,false);
 
-        TableGroup createdTableGroup = 단체_지정_요청(tableGroup);
+        TableGroup tableGroup = mock(TableGroup.class);
+        OrderTable orderTable = new OrderTable(1L,  null, 3, true);
+        OrderTable orderTable2 = new OrderTable(2L, null, 3, true);
 
-        단체_지정됨(createdTableGroup, tableGroup);
+        when(tableGroupRequest.getOrderTables()).thenReturn(Arrays.asList(orderTableRequest, orderTableRequest2));
+        when(orderTableRepository.findAllById(anyList())).thenReturn(Arrays.asList(orderTable, orderTable2));
+        when(tableGroupRepository.save(any())).thenReturn(tableGroup);
+
+        TableGroupResponse response = 주문테이블_그룹화_요청(tableGroupRequest);
+
+        주문테이블_그룹화_완료(response);
     }
 
-    @DisplayName("주문 테이블의 주문 상태가 조리 또는 식사인 경우 단체 지정을 해제할 수 없다.")
-    @Test
-    void ungroup_예외() {
-        TableGroup tableGroup = 단체에_주문테이블_정상_등록();
+    private TableGroupResponse 주문테이블_그룹화_요청(TableGroupRequest tableGroupRequest) {
+        return tableGroupService.create(tableGroupRequest);
+    }
 
-        주문테이블_주문상태_조리_식사_설정(tableGroup);
-
-        주문테이블_주문상태_조리_식사_변경_요청시_예외(tableGroup);
+    private void 주문테이블_그룹화_완료(TableGroupResponse response) {
+        assertThat(response).isNotNull();
     }
 
     @DisplayName("단체를 해제한다.")
     @Test
     void ungroup() {
-        TableGroup tableGroup = 단체에_주문테이블_정상_등록();
+        Order order = mock(Order.class);
+        Order order2 = mock(Order.class);
 
-        List<Long> orderTableIds = 주문_테이블_조회(tableGroup);
+        TableGroup tableGroup = mock(TableGroup.class);
 
-        주문테이블_단체_지정(tableGroup);
+        when(tableGroupRepository.findById(any())).thenReturn(java.util.Optional.of(tableGroup));
+        when(orderRepository.findAllByOrderTableIds(anyList())).thenReturn(Arrays.asList(order, order2));
 
-        단체_해제전_설정(tableGroup, orderTableIds);
+        tableGroupService.ungroup(1L);
 
-        단체_해제_요청(tableGroup.getId());
-
-        단체_해제됨();
-    }
-
-    public static TableGroup 단체_생성(long id, LocalDateTime now) {
-        return new TableGroup(id, now);
-    }
-
-    private TableGroup 단체에_주문테이블_정상_등록() {
-        TableGroup tableGroup = 단체_생성(1L, LocalDateTime.now());
-        orderTables.add(orderTable1);
-        orderTables.add(orderTable2);
-        tableGroup.updateOrderTables(orderTables);
-        return tableGroup;
-    }
-
-    private TableGroup 단체에_주문테이블_1개_등록() {
-        TableGroup tableGroup = 단체_생성(1L, LocalDateTime.now());
-        orderTables.add(orderTable1);
-        tableGroup.updateOrderTables(orderTables);
-        return tableGroup;
-    }
-
-    private void 주문테이블_1개인_단체등록시_예외_발생(TableGroup tableGroup) {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> tableGroupService.create(tableGroup));
-    }
-
-    private OrderTable 주문_테이블_생성(Long id, int numberOfGuests, boolean isEmpty) {
-        return new OrderTable(id, numberOfGuests, isEmpty);
-    }
-
-    private TableGroup 단체에_주문테이블_중복_등록() {
-        TableGroup tableGroup = 단체_생성(1L, LocalDateTime.now());
-        orderTables.add(orderTable1);
-        orderTables.add(orderTable2);
-        orderTables.add(orderTable1);
-        tableGroup.updateOrderTables(orderTables);
-        return tableGroup;
-    }
-
-    private void 단체에_주문테이블_중복_등록시_예외발생(TableGroup tableGroup) {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> tableGroupService.create(tableGroup));
-    }
-
-    private void 단체_지정전_설정(TableGroup tableGroup) {
-        List<Long> orderTableIds = tableGroup.getOrderTables().stream()
-                .map(OrderTable::getId)
-                .collect(Collectors.toList());
-        given(orderTableDao.findAllByIdIn(orderTableIds)).willReturn(orderTables);
-        given(tableGroupDao.save(tableGroup)).willReturn(tableGroup);
-        given(orderTableDao.save(orderTable1)).willReturn(orderTable1);
-        given(orderTableDao.save(orderTable2)).willReturn(orderTable2);
-    }
-
-    private TableGroup 단체_지정_요청(TableGroup tableGroup) {
-        return tableGroupService.create(tableGroup);
-    }
-
-    private void 단체_지정됨(TableGroup createdTableGroup, TableGroup tableGroup) {
-        assertThat(createdTableGroup.getId()).isEqualTo(tableGroup.getId());
-        assertThat(createdTableGroup.getOrderTables()).isEqualTo(tableGroup.getOrderTables());
-    }
-
-    private void 주문테이블_주문상태_조리_식사_설정(TableGroup tableGroup) {
-        List<Long> orderTableIds = tableGroup.getOrderTables().stream()
-                .map(OrderTable::getId)
-                .collect(Collectors.toList());
-
-        orderTable1.updateTableGroupId(tableGroup.getId());
-
-        given(orderTableDao.findAllByTableGroupId(tableGroup.getId())).willReturn(orderTables);
-        given(orderDao.existsByOrderTableIdInAndOrderStatusIn(
-                orderTableIds, Arrays.asList(OrderStatus.COOKING.name(), OrderStatus.MEAL.name()))).willReturn(true);
-    }
-
-    private void 주문테이블_주문상태_조리_식사_변경_요청시_예외(TableGroup tableGroup) {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> tableGroupService.ungroup(tableGroup.getId()));
-    }
-
-    private List<Long> 주문_테이블_조회(TableGroup tableGroup) {
-        return tableGroup.getOrderTables().stream()
-                .map(OrderTable::getId)
-                .collect(Collectors.toList());
-    }
-
-    private void 단체_해제전_설정(TableGroup tableGroup, List<Long> orderTableIds) {
-        given(orderTableDao.findAllByTableGroupId(tableGroup.getId())).willReturn(orderTables);
-        given(orderDao.existsByOrderTableIdInAndOrderStatusIn(
-                orderTableIds, Arrays.asList(OrderStatus.COOKING.name(), OrderStatus.MEAL.name()))).willReturn(false);
-        given(orderTableDao.save(orderTable1)).willReturn(orderTable1);
-        given(orderTableDao.save(orderTable2)).willReturn(orderTable2);
-    }
-
-    private void 주문테이블_단체_지정(TableGroup tableGroup) {
-        orderTable1.updateTableGroupId(tableGroup.getId());
-        orderTable2.updateTableGroupId(tableGroup.getId());
-    }
-
-    private void 단체_해제_요청(Long id) {
-        tableGroupService.ungroup(id);
-    }
-
-    private void 단체_해제됨() {
-        assertThat(orderTable1.getTableGroupId()).isNull();
-        assertThat(orderTable2.getTableGroupId()).isNull();
+        verify(tableGroup).ungroupOrderTables(Arrays.asList(order, order2));
     }
 }

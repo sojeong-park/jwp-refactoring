@@ -1,12 +1,6 @@
 package kitchenpos.order.application;
 
-import kitchenpos.dao.OrderDao;
-import kitchenpos.dao.OrderTableDao;
-import kitchenpos.dao.TableGroupDao;
-import kitchenpos.order.domain.OrderStatus;
-import kitchenpos.order.domain.OrderTable;
-import kitchenpos.order.domain.OrderTables;
-import kitchenpos.order.domain.TableGroup;
+import kitchenpos.order.domain.*;
 import kitchenpos.order.domain.repository.OrderRepository;
 import kitchenpos.order.domain.repository.OrderTableRepository;
 import kitchenpos.order.domain.repository.TableGroupRepository;
@@ -15,12 +9,8 @@ import kitchenpos.order.dto.TableGroupRequest;
 import kitchenpos.order.dto.TableGroupResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
-
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,69 +26,44 @@ public class TableGroupService {
     }
 
     @Transactional
-    public TableGroupResponse create(final TableGroupRequest tableGroup) {
-        final List<OrderTableRequest> orderTables = tableGroup.getOrderTables();
-
-        final List<Long> orderTableIds = orderTables.stream()
-                .map(OrderTableRequest::getId)
-                .collect(Collectors.toList());
-
-        final List<OrderTable> savedOrderTables = orderTableRepository.findAllById(orderTableIds);
-
-        //2. 저장된 주문테이블과 그룹지정하려는 주문 테이블의 개수가 같지 않으면 오류 발생한다.
-        if (orderTables.size() != savedOrderTables.size()) {
-            throw new IllegalArgumentException();
-        }
-
-        final TableGroup tableGroup1 = new TableGroup(savedOrderTables);
-
-        //1. orderTableRequest 사이즈가 2개 이상인지 비어있지는 않은지 검증한다.
-//        if (CollectionUtils.isEmpty(orderTables) || orderTables.size() < 2) {
-//            throw new IllegalArgumentException();
-//        }
-
-        //3. 모든 주문 테이블들이 빈테이블이 아니거나 groupid가 있다면(그룹지어져있다면) 단체로 묶을 수 없다.
-//        for (final OrderTable savedOrderTable : savedOrderTables) {
-//            if (!savedOrderTable.getEmpty() || Objects.nonNull(savedOrderTable.getTableGroupId())) {
-//                throw new IllegalArgumentException();
-//            }
-//        }
-
-
-        final TableGroup savedTableGroup = tableGroupRepository.save(tableGroup1);
-
-//        final Long tableGroupId = savedTableGroup.getId();
-//        for (final OrderTable savedOrderTable : savedOrderTables) {
-//            savedOrderTable.updateTableGroupId(tableGroupId);
-//            savedOrderTable.updateEmpty(false);
-//            orderTableDao.save(savedOrderTable);
-//        }
-//        savedTableGroup.updateOrderTables(savedOrderTables);
-
+    public TableGroupResponse create(final TableGroupRequest request) {
+        final List<OrderTable> orderTables = findOrderTable(request.getOrderTables());
+        final TableGroup tableGroup = new TableGroup(orderTables);
+        final TableGroup savedTableGroup = tableGroupRepository.save(tableGroup);
         return TableGroupResponse.of(savedTableGroup);
     }
 
     @Transactional
     public void ungroup(final Long tableGroupId) {
-        //tableGroup 에 등록되어있는 orderTable을 해제한다.
-        //그러면 orderTable은? 같이 해제가 되면 좋겠다. -> d음..
-        final TableGroup tableGroup = tableGroupRepository.findById(tableGroupId).orElseThrow(IllegalArgumentException::new);
-        List<OrderTable> orderTables = tableGroup.getOrderTables();
+        final TableGroup tableGroup = findById(tableGroupId);
+        List<Order> orders = findOrder(tableGroup.getOrderTables());
+        tableGroup.ungroupOrderTables(orders);
+    }
 
-        //final List<OrderTable> orderTables = orderTableRepository.findAllByTableGroupId(tableGroupId);
+    private List<OrderTable> findOrderTable(List<OrderTableRequest> orderTableRequests) {
+        final List<Long> orderTableIds = orderTableRequests.stream()
+                .map(OrderTableRequest::getId)
+                .collect(Collectors.toList());
+        List<OrderTable> orderTables = orderTableRepository.findAllById(orderTableIds);
+        validRegisteredOrderTable(orderTables.size(), orderTableIds.size());
+        return orderTableRepository.findAllById(orderTableIds);
+    }
 
-        final List<Long> orderTableIds = orderTables.stream()
+    private void validRegisteredOrderTable(int orderTableSize, int orderTableIdSize) {
+        if (orderTableSize != orderTableIdSize) {
+            throw new IllegalArgumentException("등록된 주문테이블만 그룹화 할 수 있습니다.");
+        }
+    }
+
+    private TableGroup findById(Long tableGroupId){
+        return tableGroupRepository.findById(tableGroupId)
+                .orElseThrow(() -> new IllegalArgumentException("등록된 테이블 그룹만 그룹해제 가능합니다."));
+    }
+
+    private List<Order> findOrder(List<OrderTable> orderTables) {
+        List<Long> orderTableIds = orderTables.stream()
                 .map(OrderTable::getId)
                 .collect(Collectors.toList());
-
-        if (orderRepository.existsByOrderTableIdInAndOrderStatusIn(
-                orderTableIds, Arrays.asList(OrderStatus.COOKING, OrderStatus.MEAL))) {
-            throw new IllegalArgumentException();
-        }
-        tableGroup.upGroupOrderTables();
-//        for (final OrderTable orderTable : orderTables) {
-//            orderTable.updateTableGroupId(null);
-//            orderTableDao.save(orderTable);
-//        }
+        return orderRepository.findAllByOrderTableIds(orderTableIds);
     }
 }

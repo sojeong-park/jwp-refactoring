@@ -22,7 +22,7 @@ public class Order extends BaseEntity {
     private OrderStatus orderStatus;
 
     @Embedded
-    private OrderLineItems orderLineItems;
+    private OrderLineItems orderLineItems = new OrderLineItems();
 
     public Order() {}
 
@@ -31,14 +31,14 @@ public class Order extends BaseEntity {
         this.orderTable = orderTable;
         this.orderStatus = orderStatus;
         this.orderLineItems = new OrderLineItems(orderLineItems);
-        updateOrderStatus(orderStatus);
+        this.orderStatus = orderStatus;
     }
 
-    public Order(OrderTable orderTable, OrderStatus orderStatus) {
-        this.id = id;
+    public Order(OrderTable orderTable, OrderStatus orderStatus, List<OrderLineItem> orderLineItems) {
         this.orderTable = orderTable;
         this.orderStatus = orderStatus;
-        updateOrderStatus(orderStatus);
+        this.orderStatus = orderStatus;
+        this.orderLineItems = new OrderLineItems(orderLineItems);
     }
 
     public Long getId() {
@@ -53,33 +53,27 @@ public class Order extends BaseEntity {
         return orderTable.getId();
     }
 
-//    public void updateOrderTableId(final OrderTable orderTableId) {
-//        this.orderTableId = orderTableId;
-//    }
-
     public OrderStatus getOrderStatus() {
         return orderStatus;
     }
 
     public void updateOrderStatus(final OrderStatus orderStatus) {
-        validCompletionStatus(orderStatus);
+        validCompletionStatus();
         this.orderStatus = orderStatus;
     }
 
-    public void validCompletionStatus(OrderStatus orderStatus) {
-        if (orderStatus.equals(orderStatus)) {
-            throw new IllegalArgumentException();
+    public void validCompletionStatus() {
+        if (this.orderStatus.equals(OrderStatus.COMPLETION)) {
+            throw new IllegalArgumentException("완료된 주문은 상태를 변경할 수 없습니다.");
         }
-//        if (Objects.equals(orderStatus, this.orderStatus)) {
-//            throw new IllegalArgumentException();
-//        }
     }
 
     public List<OrderLineItem> getOrderLineItems() {
         return orderLineItems.getOrderLineItems();
     }
 
-//    public void updateOrderLineItems(final List<OrderLineItem> orderLineItems) {
-//        this.orderLineItems = orderLineItems;
-//    }
+    public boolean isOrderStatusCompletion() {
+        return orderStatus == OrderStatus.COMPLETION;
+    }
+
 }

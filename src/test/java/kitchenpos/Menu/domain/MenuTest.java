@@ -60,7 +60,7 @@ class MenuTest {
                 .hasMessageContaining("메뉴가격은 메뉴에 등록된 상품 가격의 합보다 작거나 같아야합니다.");
     }
 
-    private Menu 메뉴_생성(long id, Name name, Price price, MenuGroup menuGroup, List<MenuProduct> menuProducts) {
+    public static Menu 메뉴_생성(long id, Name name, Price price, MenuGroup menuGroup, List<MenuProduct> menuProducts) {
         return new Menu(id, name, price, menuGroup, menuProducts);
     }
 

@@ -119,7 +119,7 @@ public class MenuServiceTest {
         menuProductRequests.add(menuProductRequest2);
     }
 
-    private MenuGroup 그룹_생성(String name) {
+    public static MenuGroup 그룹_생성(String name) {
         return new MenuGroup(name);
     }
 
@@ -137,7 +137,7 @@ public class MenuServiceTest {
         assertThat(menuResponse.getMenuProducts().get(0).getProduct().getName()).isEqualTo(뿌링클.getName());
     }
 
-    private Menu 메뉴_생성(String name, BigDecimal price, MenuGroup menuGroup, List<MenuProduct> menuProducts) {
+    public static Menu 메뉴_생성(String name, BigDecimal price, MenuGroup menuGroup, List<MenuProduct> menuProducts) {
         return new Menu(name, price, menuGroup, menuProducts);
     }
 

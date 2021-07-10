@@ -7,7 +7,7 @@ import java.util.List;
 
 public class OrderResponse {
     private Long id;
-    private OrderTableResponse orderTable;
+    private Long orderTableId;
     private String orderStatus;
     private List<OrderLineItem> orderLineItems;
 
@@ -15,7 +15,7 @@ public class OrderResponse {
 
     public OrderResponse(Order order) {
         this.id = order.getId();
-        this.orderTable = OrderTableResponse.of(order.getOrderTable());
+        this.orderTableId = order.getOrderTableId();
         this.orderStatus = order.getOrderStatus().name();
         this.orderLineItems = order.getOrderLineItems();
     }
@@ -24,8 +24,8 @@ public class OrderResponse {
         return id;
     }
 
-    public OrderTableResponse getOrderTable() {
-        return orderTable;
+    public Long getOrderTable() {
+        return orderTableId;
     }
 
     public String getOrderStatus() {

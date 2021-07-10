@@ -1,8 +1,6 @@
 package kitchenpos.order.application;
 
-import kitchenpos.dao.OrderDao;
-import kitchenpos.dao.OrderTableDao;
-import kitchenpos.order.domain.OrderStatus;
+import kitchenpos.order.domain.Order;
 import kitchenpos.order.domain.OrderTable;
 import kitchenpos.order.domain.repository.OrderRepository;
 import kitchenpos.order.domain.repository.OrderTableRepository;
@@ -11,9 +9,7 @@ import kitchenpos.order.dto.OrderTableResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,23 +38,18 @@ public class TableService {
     @Transactional
     public OrderTableResponse changeEmpty(final Long orderTableId, final OrderTableRequest request) {
         final OrderTable savedOrderTable = orderTableRepository.findById(orderTableId).orElseThrow(IllegalArgumentException::new);
-        validOrderStatus(orderTableId);
-        savedOrderTable.updateEmpty(request.isEmpty());
+        savedOrderTable.updateEmpty(request.isEmpty(), findOrder(orderTableId));
         return OrderTableResponse.of(savedOrderTable);
     }
 
     @Transactional
     public OrderTableResponse changeNumberOfGuests(final Long orderTableId, final OrderTableRequest orderTable) {
-        final int numberOfGuests = orderTable.getNumberOfGuests();
         final OrderTable savedOrderTable = orderTableRepository.findById(orderTableId).orElseThrow(IllegalArgumentException::new);
-        savedOrderTable.updateNumberOfGuests(numberOfGuests);
+        savedOrderTable.updateNumberOfGuests(orderTable.getNumberOfGuests());
         return OrderTableResponse.of(savedOrderTable);
     }
 
-    private void validOrderStatus(final Long orderTableId) {
-        if (orderRepository.existsByOrderTableIdAndOrderStatusIn(
-                orderTableId, Arrays.asList(OrderStatus.COOKING, OrderStatus.MEAL))) {
-            throw new IllegalArgumentException();
-        }
+    private List<Order> findOrder(final Long orderTableId) {
+        return orderRepository.findAllByOrderTableId(orderTableId);
     }
 }

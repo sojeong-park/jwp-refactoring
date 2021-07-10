@@ -43,11 +43,11 @@ public class MenuRestControllerTest {
 
     private MenuResponse menu1;
     private MenuResponse menu2;
-    Product product;
-    Product product2;
-    MenuProduct menuProduct;
-    MenuProduct menuProduct2;
-    MenuGroup menuGroup;
+    private Product product;
+    private Product product2;
+    private MenuProduct menuProduct;
+    private MenuProduct menuProduct2;
+    private MenuGroup menuGroup;
 
     private MockMvc mockMvc;
 

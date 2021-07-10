@@ -8,13 +8,13 @@ public class NumberOfGuests {
     }
 
     public NumberOfGuests(int number) {
-        checkNegative(number);
+        validNegative(number);
         this.number = number;
     }
 
-    private void checkNegative(int number) {
+    private void validNegative(int number) {
         if (number < 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("변경하려는 인원수는 0보다 커야합니다.");
         }
     }
 

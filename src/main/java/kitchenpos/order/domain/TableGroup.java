@@ -17,6 +17,10 @@ public class TableGroup extends BaseEntity {
 
     public TableGroup() {}
 
+    public TableGroup(Long id) {
+        this.id = id;
+    }
+
     public TableGroup(List<OrderTable> orderTables) {
         this.orderTables = new OrderTables(orderTables);
     }
@@ -34,11 +38,7 @@ public class TableGroup extends BaseEntity {
         return orderTables.getOrderTables();
     }
 
-    public void upGroupOrderTables() {
-        orderTables.unGroup();
+    public void ungroupOrderTables(List<Order> orders) {
+        orderTables.unGroup(orders);
     }
-
-//    public void updateOrderTables(final List<OrderTable> orderTables) {
-//        this.orderTables = orderTables;
-//    }
 }

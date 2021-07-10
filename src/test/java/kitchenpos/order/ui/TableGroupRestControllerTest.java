@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kitchenpos.order.application.TableGroupService;
 import kitchenpos.order.domain.OrderTable;
 import kitchenpos.order.domain.TableGroup;
+import kitchenpos.order.dto.OrderTableRequest;
+import kitchenpos.order.dto.TableGroupRequest;
+import kitchenpos.order.dto.TableGroupResponse;
 import kitchenpos.order.ui.TableGroupRestController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +24,10 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
-import static kitchenpos.order.application.OrderServiceTest.주문테이블_생성;
-import static kitchenpos.order.application.TableGroupServiceTest.단체_생성;
+//import static kitchenpos.order.application.OrderServiceTest.주문테이블_생성;
+//import static kitchenpos.order.application.TableGroupServiceTest.단체_생성;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -37,8 +41,9 @@ class TableGroupRestControllerTest {
     private static final String TABLE_GROUPS_URI = "/api/table-groups";
     private static final String TABLE_UNGROUPS_URI = "/{tableGroupId}";
 
-    private TableGroup tableGroup;
+    private TableGroupResponse tableGroupResponse;
     private OrderTable orderTable1;
+    private TableGroup tableGroup;
 
     private MockMvc mockMvc;
 
@@ -54,20 +59,18 @@ class TableGroupRestControllerTest {
     @BeforeEach
     void setUp() {
         setUpMockMvc();
-
-        tableGroup = 단체_생성(1L, LocalDateTime.now());
-
-        orderTable1 = 주문테이블_생성(1L, 2L, 2, true);
-
-        단체에_주문테이블_등록();
+        tableGroupResponse = 테이블_그룹_응답값_생성();
+        orderTable1 = new OrderTable(1L, null, 3, true);
     }
 
     @DisplayName("단체를 등록한다.")
     @Test
     void create() throws Exception{
-        given(tableGroupService.create(any())).willReturn(tableGroup);
+        given(tableGroupService.create(any())).willReturn(tableGroupResponse);
 
-        final ResultActions resultActions = 단체_등록_요청();
+        TableGroupRequest tableGroupRequest = new TableGroupRequest(1L, 주문_테이블_리스트_생성());
+
+        final ResultActions resultActions = 단체_등록_요청(tableGroupRequest);
 
         단체_요청됨(resultActions);
     }
@@ -80,9 +83,14 @@ class TableGroupRestControllerTest {
         단체_해제됨(resultActions);
     }
 
-    public String toString(TableGroup tableGroup) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(tableGroup);
+    private TableGroupResponse 테이블_그룹_응답값_생성() {
+        OrderTable orderTable = new OrderTable(1L, null, 3, true);
+        OrderTable orderTable2 = new OrderTable(1L, null,4, true);
+        List<OrderTable> orderTables = Arrays.asList(orderTable, orderTable2);
+        tableGroup = new TableGroup(1L, orderTables);
+        return new TableGroupResponse(tableGroup);
     }
+
     private void setUpMockMvc() {
         mockMvc = MockMvcBuilders.standaloneSetup(tableGroupRestController)
                 .addFilter(new CharacterEncodingFilter(StandardCharsets.UTF_8.name(), true))
@@ -90,14 +98,15 @@ class TableGroupRestControllerTest {
                 .build();
     }
 
-    private void 단체에_주문테이블_등록() {
-        tableGroup.updateOrderTables(Arrays.asList(orderTable1));
+    private List<OrderTableRequest> 주문_테이블_리스트_생성() {
+        OrderTableRequest orderTableRequest = new OrderTableRequest(1L, null, 3, false);
+        return Arrays.asList(orderTableRequest);
     }
 
-    private ResultActions 단체_등록_요청() throws Exception{
+    private ResultActions 단체_등록_요청(TableGroupRequest request) throws Exception{
         return mockMvc.perform(post(TABLE_GROUPS_URI)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toString(tableGroup)));
+                .content(objectMapper.writeValueAsString(request)));
     }
 
 
@@ -106,10 +115,10 @@ class TableGroupRestControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", "/api/table-groups/1"))
                 .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.orderTables").isNotEmpty())
-                .andExpect(jsonPath("orderTables[0].id").value(orderTable1.getId()))
-                .andExpect(jsonPath("orderTables[0].empty").value(orderTable1.isEmpty()))
-                .andExpect(jsonPath("orderTables[0].numberOfGuests").value(orderTable1.getNumberOfGuests()));
+                .andExpect(jsonPath("$.orderTableResponseList").isNotEmpty())
+                .andExpect(jsonPath("orderTableResponseList[0].id").value(orderTable1.getId()))
+                .andExpect(jsonPath("orderTableResponseList[0].empty").value(orderTable1.getEmpty()))
+                .andExpect(jsonPath("orderTableResponseList[0].numberOfGuests").value(orderTable1.getNumberOfGuests()));
 
     }
 
